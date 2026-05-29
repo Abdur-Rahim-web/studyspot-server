@@ -4,6 +4,10 @@ const port = process.env.PORT || 5000;
 const dotenv = require('dotenv');
 dotenv.config();
 
+const cors = require('cors');
+app.use(cors());
+app.use(express.json());
+
 
 const { MongoClient, ServerApiVersion, ObjectId, } = require('mongodb');
 const uri = process.env.MONGODB_URI;
@@ -48,6 +52,14 @@ async function run() {
             res.send(result);
 
         });
+
+        app.post('/rooms', async (req, res) => {
+            const newRoom = req.body;
+            const result = await roomsCollection.insertOne(newRoom);
+            res.send(result);
+        });
+
+
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
