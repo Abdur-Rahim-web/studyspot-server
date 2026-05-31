@@ -59,6 +59,16 @@ async function run() {
             res.send(result);
         });
 
+        app.patch('/rooms/:id', async (req, res) => {
+            const id = req.params.id;
+            const updatedRoom = req.body;
+            const result = await roomsCollection.updateOne(
+                { _id: new ObjectId(id) },
+                { $set: updatedRoom }
+            );
+            res.send(result);
+        });
+
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
