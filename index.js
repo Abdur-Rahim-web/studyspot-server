@@ -29,6 +29,7 @@ async function run() {
         const database = client.db('studyspot');
         const roomsCollection = database.collection('rooms');
 
+        // Rooms API
         app.get('/rooms', async (req, res) => {
             const result = await roomsCollection.find().toArray();
             res.send(result);
@@ -75,6 +76,20 @@ async function run() {
             res.send(result);
         });
 
+        // Bookings API
+        const bookingsCollection = database.collection('bookings');
+
+        app.post('/bookings', async (req, res) => {
+            const newBooking = req.body;
+            const result = await bookingsCollection.insertOne(newBooking);
+            res.send(result);
+        });
+
+        app.get('/bookings/:userId', async (req, res) => {
+            const userId = req.params.userId;
+            const result = await bookingsCollection.find({ userId: userId }).toArray();
+            res.send(result);
+        });
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
