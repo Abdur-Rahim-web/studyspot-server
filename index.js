@@ -78,6 +78,19 @@ async function run() {
             res.send(result);
         });
 
+        app.get("/my-rooms/:userId", verifyJWT, async (req, res) => {
+            const userId = req.params.userId;
+
+            const result = await roomsCollection
+                .find({
+                    ownerId: userId,
+                })
+                .sort({ createdAt: -1 })
+                .toArray();
+
+            res.send(result);
+        });
+
         app.get('/rooms/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
