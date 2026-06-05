@@ -91,10 +91,13 @@ async function run() {
             res.send(result);
         });
 
-        app.get('/rooms/:id', verifyJWT, async (req, res) => {
+        app.get('/rooms/:id', async (req, res) => {
             const id = req.params.id;
-            const query = { _id: new ObjectId(id) };
-            const result = await roomsCollection.findOne(query);
+
+            const result = await roomsCollection.findOne({
+                _id: new ObjectId(id),
+            });
+
             res.send(result);
         });
 
@@ -156,6 +159,17 @@ async function run() {
             }
 
             const result = await bookingsCollection.insertOne(newBooking);
+
+            await roomsCollection.updateOne(
+                {
+                    _id: new ObjectId(newBooking.roomId),
+                },
+                {
+                    $inc: {
+                        bookingCount: 1,
+                    },
+                }
+            );
 
             res.send(result);
         });
