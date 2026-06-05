@@ -22,7 +22,7 @@ const client = new MongoClient(uri, {
     }
 });
 
-const JWKS = createRemoteJWKSet(new URL("http://localhost:3000/api/auth/jwks"));
+const JWKS = createRemoteJWKSet(new URL(`${process.env.CLIENT_URL}/api/auth/jwks`));
 
 const verifyJWT = async (req, res, next) => {
     const authHeader = req?.headers.authorization;
@@ -49,14 +49,32 @@ const verifyJWT = async (req, res, next) => {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
 
         const database = client.db('studyspot');
         const roomsCollection = database.collection('rooms');
 
         // Rooms API
-        app.get('/rooms', async (req, res) => {
-            const result = await roomsCollection.find().toArray();
+        app.get("/rooms", async (req, res) => {
+            const { search, amenities } = req.query;
+
+            const query = {};
+
+            if (search) {
+                query.roomName = {
+                    $regex: search,
+                    $options: "i",
+                };
+            }
+
+            if (amenities) {
+                query.amenities = {
+                    $in: [amenities],
+                };
+            }
+
+            const result = await roomsCollection.find(query).toArray();
+
             res.send(result);
         });
 
@@ -106,7 +124,26 @@ async function run() {
 
         app.post('/bookings', verifyJWT, async (req, res) => {
             const newBooking = req.body;
+
+            const conflict = await bookingsCollection.findOne({
+                roomId: newBooking.roomId,
+                date: newBooking.date,
+                startTime: {
+                    $lte: newBooking.endTime,
+                },
+                endTime: {
+                    $gte: newBooking.startTime,
+                },
+            });
+
+            if (conflict) {
+                return res.status(409).send({
+                    message: "This room is already booked for this time slot",
+                });
+            }
+
             const result = await bookingsCollection.insertOne(newBooking);
+
             res.send(result);
         });
 
@@ -123,7 +160,7 @@ async function run() {
         });
 
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
+        // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
